@@ -1,7 +1,7 @@
 # Makefile.am
 # Automake file for protoTF plugin
-# By Steve Limkemann <stevelim@dgtech.com>
-# Copyright 1998 Steve Limkemann
+# By Ishraq Ibne Ashraf <ishraq86@gmail.com>
+# Copyright 2013 Ishraq Ibne Ashraf
 #
 # $Id: Makefile.am 48261 2013-03-12 06:53:39Z jake $
 #
