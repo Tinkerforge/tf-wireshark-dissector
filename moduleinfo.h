@@ -5,7 +5,7 @@
 #endif
 
 /* Name of package */
-#define PACKAGE "protoTF"
+#define PACKAGE "tfp"
 
 
 #ifdef VERSION

@@ -1,5 +1,5 @@
 # Makefile.nmake
-# nmake file for protoTF plugin
+# nmake file for tfp plugin
 #
 # $Id: Makefile.nmake 47992 2013-03-01 23:53:11Z rbalint $
 #

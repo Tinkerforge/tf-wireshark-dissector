@@ -22,12 +22,12 @@ WS_DLL_PUBLIC_NOEXTERN const gchar version[] = VERSION;
 WS_DLL_PUBLIC_NOEXTERN void
 plugin_register (void)
 {
-  {extern void proto_register_protoTF (void); proto_register_protoTF ();}
+  {extern void proto_register_tfp (void); proto_register_tfp ();}
 }
 
 WS_DLL_PUBLIC_NOEXTERN void
 plugin_reg_handoff(void)
 {
-  {extern void proto_reg_handoff_protoTF (void); proto_reg_handoff_protoTF ();}
+  {extern void proto_reg_handoff_tfp (void); proto_reg_handoff_tfp ();}
 }
 #endif

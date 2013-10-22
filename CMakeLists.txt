@@ -22,7 +22,7 @@
 #
 
 set(DISSECTOR_SRC
-	packet-protoTF.c
+	packet-tfp.c
 )
 
 set(PLUGIN_FILES
@@ -49,15 +49,15 @@ register_dissector_files(plugin.c
 	${DISSECTOR_SRC}
 )
 
-add_library(protoTF ${LINK_MODE_MODULE}
+add_library(tfp ${LINK_MODE_MODULE}
 	${PLUGIN_FILES}
 )
-set_target_properties(protoTF PROPERTIES PREFIX "")
-set_target_properties(protoTF PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
+set_target_properties(tfp PROPERTIES PREFIX "")
+set_target_properties(tfp PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 
-target_link_libraries(protoTF epan)
+target_link_libraries(tfp epan)
 
-install(TARGETS protoTF
+install(TARGETS tfp
 	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/@CPACK_PACKAGE_NAME@/plugins/${CPACK_PACKAGE_VERSION} NAMELINK_SKIP
 	RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/@CPACK_PACKAGE_NAME@/plugins/${CPACK_PACKAGE_VERSION}
 	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/@CPACK_PACKAGE_NAME@/plugins/${CPACK_PACKAGE_VERSION}

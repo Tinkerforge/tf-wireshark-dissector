@@ -1,5 +1,5 @@
 # Makefile.am
-# Automake file for protoTF plugin
+# Automake file for tfp plugin
 # By Ishraq Ibne Ashraf <ishraq86@gmail.com>
 # Copyright 2013 Ishraq Ibne Ashraf
 #
@@ -36,16 +36,16 @@ endif
 
 plugindir = @plugindir@
 
-plugin_LTLIBRARIES = protoTF.la
+plugin_LTLIBRARIES = tfp.la
 
-protoTF_la_SOURCES = \
+tfp_la_SOURCES = \
 	plugin.c \
 	moduleinfo.h \
 	$(SRC_FILES)	\
 	$(HEADER_FILES)
 
-protoTF_la_LDFLAGS = -module -avoid-version
-protoTF_la_LIBADD = @PLUGIN_LIBS@
+tfp_la_LDFLAGS = -module -avoid-version
+tfp_la_LIBADD = @PLUGIN_LIBS@
 
 # Libs must be cleared, or else libtool won't create a shared module.
 # If your module needs to be linked against any particular libraries,
@@ -116,7 +116,7 @@ plugin.c: $(REGISTER_SRC_FILES) Makefile.common $(top_srcdir)/tools/make-dissect
 #	@rm -f $(distdir)/plugin.c
 
 CLEANFILES = \
-	protoTF \
+	tfp \
 	*~
 
 MAINTAINERCLEANFILES = \
