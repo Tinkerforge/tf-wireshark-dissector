@@ -49,27 +49,27 @@ static gint ett_tfp = -1;
 static proto_tree *tfp_tree = NULL;
 
 // header field variables
-static int hf_tfp_uid_string = -1;
+static int hf_tfp_uid = -1;
 static int hf_tfp_uid_numeric = -1;
-static int hf_tfp_length = -1;
-static int hf_tfp_function_id = -1;
-static int hf_tfp_sequence_number = -1;
+static int hf_tfp_len = -1;
+static int hf_tfp_fid = -1;
+static int hf_tfp_seq = -1;
 static int hf_tfp_r = -1;
 static int hf_tfp_a = -1;
 static int hf_tfp_oo = -1;
 static int hf_tfp_e = -1;
 static int hf_tfp_future_use = -1;
-static int hf_tfp_data = -1;
+static int hf_tfp_payload = -1;
 
 // bit and byte offsets for dissection
 static gint byte_offset = 0;
 static gint byte_count_tfp_uid = 4;
-static gint byte_count_tfp_length = 1;
-static gint byte_count_tfp_function_id = 1;
-static gint byte_count_tfp_flags= 2;
-static gint byte_count_tfp_data = -1;
+static gint byte_count_tfp_len = 1;
+static gint byte_count_tfp_fid = 1;
+static gint byte_count_tfp_flags = 2;
+static gint byte_count_tfp_payload = -1;
 static gint bit_offset = 48;
-static gint bit_count_tfp_sequence_number = 4;
+static gint bit_count_tfp_seq = 4;
 static gint bit_count_tfp_r = 1;
 static gint bit_count_tfp_a = 1;
 static gint bit_count_tfp_oo = 2;
@@ -127,7 +127,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			      &tfp_uid_string[0]);
 
         	proto_tree_add_string(tfp_tree,
-				      hf_tfp_uid_string,
+				      hf_tfp_uid,
  				      tvb, byte_offset, byte_count_tfp_uid,
                                       &tfp_uid_string[0]);
 
@@ -141,31 +141,31 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		byte_offset += byte_count_tfp_uid;
 
         	proto_tree_add_item(tfp_tree,
-				    hf_tfp_length,
+				    hf_tfp_len,
 				    tvb,
 				    byte_offset,
-				    byte_count_tfp_length,
+				    byte_count_tfp_len,
 				    ENC_BIG_ENDIAN);
 		
-		byte_offset += byte_count_tfp_length;
+		byte_offset += byte_count_tfp_len;
 
         	proto_tree_add_item(tfp_tree,
-				    hf_tfp_function_id,
+				    hf_tfp_fid,
      				    tvb,
 				    byte_offset,
-				    byte_count_tfp_function_id,
+				    byte_count_tfp_fid,
 				    ENC_BIG_ENDIAN);
 		
-		byte_offset += byte_count_tfp_function_id;
+		byte_offset += byte_count_tfp_fid;
 
         	proto_tree_add_bits_item(tfp_tree,
-					 hf_tfp_sequence_number,
+					 hf_tfp_seq,
 					 tvb,
 					 bit_offset,
-					 bit_count_tfp_sequence_number,
+					 bit_count_tfp_seq,
 					 ENC_BIG_ENDIAN);
 
-		bit_offset += bit_count_tfp_sequence_number;
+		bit_offset += bit_count_tfp_seq;
 
         	proto_tree_add_bits_item(tfp_tree,
 					 hf_tfp_r,
@@ -217,10 +217,10 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			byte_offset += byte_count_tfp_flags;
         			
 			proto_tree_add_item(tfp_tree,
-				    	    hf_tfp_data,
+				    	    hf_tfp_payload,
 				    	    tvb,
 				    	    byte_offset,
-				    	    byte_count_tfp_data,
+				    	    byte_count_tfp_payload,
 				    	    ENC_NA);
 		}
     	}
@@ -251,7 +251,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			      	      &tfp_uid_string[0]);
 
         		proto_tree_add_string(tfp_tree,
-				      	      hf_tfp_uid_string,
+				      	      hf_tfp_uid,
  				      	      tvb, byte_offset, byte_count_tfp_uid,
                                       	      &tfp_uid_string[0]);
 
@@ -265,31 +265,31 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			byte_offset += byte_count_tfp_uid;
 
         		proto_tree_add_item(tfp_tree,
-				    	    hf_tfp_length,
+				    	    hf_tfp_len,
 				    	    tvb,
 				    	    byte_offset,
-				    	    byte_count_tfp_length,
+				    	    byte_count_tfp_len,
 				    	    ENC_BIG_ENDIAN);
 		
-			byte_offset += byte_count_tfp_length;
+			byte_offset += byte_count_tfp_len;
 
         		proto_tree_add_item(tfp_tree,
-				    	    hf_tfp_function_id,
+				    	    hf_tfp_fid,
 				    	    tvb,
 				    	    byte_offset,
-				    	    byte_count_tfp_function_id,
+				    	    byte_count_tfp_fid,
 				    	    ENC_BIG_ENDIAN);
 		
-			byte_offset += byte_count_tfp_function_id;
+			byte_offset += byte_count_tfp_fid;
 
         		proto_tree_add_bits_item(tfp_tree,
-				    	    hf_tfp_sequence_number,
+				    	    hf_tfp_seq,
 				    	    tvb,
 				    	    bit_offset,
-				    	    bit_count_tfp_sequence_number,
+				    	    bit_count_tfp_seq,
 				    	    ENC_BIG_ENDIAN);
 
-			bit_offset += bit_count_tfp_sequence_number;
+			bit_offset += bit_count_tfp_seq;
 
         		proto_tree_add_bits_item(tfp_tree,
 				    	   	 hf_tfp_r,
@@ -342,10 +342,10 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				byte_offset += byte_count_tfp_flags;
         			
 				proto_tree_add_item(tfp_tree,
-				    	    	    hf_tfp_data,
+				    	    	    hf_tfp_payload,
 				    	    	    tvb,
 				    	     	    byte_offset,
-				    	    	    byte_count_tfp_data,
+				    	    	    byte_count_tfp_payload,
 				    	    	    ENC_NA);
 			}
     		}
@@ -358,8 +358,8 @@ proto_register_tfp(void)
 {
 	// defining header formats
 	static hf_register_info hf_tfp[] = {
-      		{ &hf_tfp_uid_string,
-            		{ "UID(String)",
+      		{ &hf_tfp_uid,
+            		{ "UID (String)",
 	  	    	  "tfp.uid",
             	          FT_STRINGZ,
 			  BASE_NONE,
@@ -370,7 +370,7 @@ proto_register_tfp(void)
 		  	}
         	},
         	{ &hf_tfp_uid_numeric,
-            		{ "UID(Numeric)",
+            		{ "UID (Numeric)",
 	  	    	  "tfp.uid_numeric",
             	          FT_UINT32,
 			  BASE_DEC,
@@ -380,9 +380,9 @@ proto_register_tfp(void)
 		          HFILL
 		  	}
         	},
-        	{ &hf_tfp_length,
+        	{ &hf_tfp_len,
             		{ "Length",
-	  	    	  "tfp.length",
+	  	    	  "tfp.len",
             	          FT_UINT8,
 			  BASE_DEC,
             	          NULL,
@@ -391,7 +391,7 @@ proto_register_tfp(void)
 		          HFILL
 		  	}
         	},
-        	{ &hf_tfp_function_id,
+        	{ &hf_tfp_fid,
             		{ "Function ID",
 	  	    	  "tfp.fid",
             	          FT_UINT8,
@@ -402,9 +402,9 @@ proto_register_tfp(void)
 		          HFILL
 		  	}
         	},
-        	{ &hf_tfp_sequence_number,
+        	{ &hf_tfp_seq,
             		{ "Sequence Number",
-	  	    	  "tfp.sequence_number",
+	  	    	  "tfp.seq",
             	          FT_UINT8,
 			  BASE_DEC,
             	          NULL,
@@ -437,7 +437,7 @@ proto_register_tfp(void)
         	},
         	{ &hf_tfp_oo,
             		{ "Other Options",
-	  	    	  "tfp.o",
+	  	    	  "tfp.oo",
             	          FT_UINT8,
 			  BASE_DEC,
             	          NULL,
@@ -468,7 +468,7 @@ proto_register_tfp(void)
 		          HFILL
 		  	}
         	},
-		{ &hf_tfp_data,
+		{ &hf_tfp_payload,
             		{ "Payload",
 	  	    	  "tfp.payload",
             	          FT_BYTES,
