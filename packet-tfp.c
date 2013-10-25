@@ -30,25 +30,26 @@
 #include <glib.h>
 #include <epan/packet.h>
 #include <epan/dissectors/packet-usb.h>
-#include <epan/prefs.h>
 
-// defines
+/* defines */
 #define tfp_PORT 4223
 #define tfp_USB_VENDOR_ID 0x16D0
 #define tfp_USB_PRODUCT_ID 0x063D
 #define BASE58_MAX_STR_SIZE 13
+#define tfp_BYTE_OFFSET_LEN 4
+#define tfp_BYTE_OFFSET_FID 5
+#define tfp_BIT_OFFSET_SEQ 48
 
-// protocol naming strings
-static const char *tfp_proto_name = "Tinkerforge Protocol";
-static const char *tfp_proto_name_tcp = "tfp tcp";
-static const char *tfp_proto_name_usb = "tfp usb";
+/* protocol naming strings */
+static const char *tfp_proto_name_tcp = "TFP over TCP";
+static const char *tfp_proto_name_usb = "TFP over USB";
 
-// variables for creating the tree
+/* variables for creating the tree */
 static int proto_tfp = -1;
 static gint ett_tfp = -1;
 static proto_tree *tfp_tree = NULL;
 
-// header field variables
+/* header field variables */
 static int hf_tfp_uid = -1;
 static int hf_tfp_uid_numeric = -1;
 static int hf_tfp_len = -1;
@@ -61,7 +62,7 @@ static int hf_tfp_e = -1;
 static int hf_tfp_future_use = -1;
 static int hf_tfp_payload = -1;
 
-// bit and byte offsets for dissection
+/* bit and byte offsets for dissection */
 static gint byte_offset = 0;
 static gint byte_count_tfp_uid = 4;
 static gint byte_count_tfp_len = 1;
@@ -76,12 +77,17 @@ static gint bit_count_tfp_oo = 2;
 static gint bit_count_tfp_e = 2;
 static gint bit_count_tfp_future_use = 6;
 
-// base58 encoding variables
+/* tree header view variables */
+static guint8 hv_tfp_len = 0;
+static guint8 hv_tfp_fid = 0;
+static guint8 hv_tfp_seq = 0;
+
+/* base58 encoding variables */
 static char tfp_uid_string[BASE58_MAX_STR_SIZE];
 static const char BASE58_ALPHABET[] = 
 	"123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
-// function for encoding a number to base58 string
+/* function for encoding a number to base58 string */
 static void base58_encode(uint32_t value, char* str) {
 
         uint32_t mod;
@@ -107,24 +113,36 @@ static void base58_encode(uint32_t value, char* str) {
         }
 }
 
-// dissector function for dissecting TCP payloads
+/* dissector function for dissecting TCP payloads */
 static void
 dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	byte_offset = 0;
 	bit_offset = 48;
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, &tfp_proto_name_tcp[0]);	
-	col_set_str(pinfo->cinfo, COL_INFO, &tfp_proto_name[0]);
 
-	// call for details
+	base58_encode((uint32_t)tvb_get_letohl(tvb, 0), &tfp_uid_string[0]);
+
+	hv_tfp_len = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_LEN);
+	hv_tfp_fid = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_FID);
+	hv_tfp_seq = tvb_get_bits8(tvb, (gint)tfp_BIT_OFFSET_SEQ, (gint)bit_count_tfp_seq);
+
+
+    	col_clear(pinfo->cinfo, COL_INFO);
+    	col_clear(pinfo->cinfo, COL_PROTOCOL);
+
+	col_set_str(pinfo->cinfo, COL_PROTOCOL, &tfp_proto_name_tcp[0]);	
+	col_append_fstr(pinfo->cinfo, COL_INFO, 
+			"UID: %s, Len: %d, FID: %d, Seq: %d", 
+			&tfp_uid_string[0], hv_tfp_len, hv_tfp_fid, hv_tfp_seq);
+
+	/* call for details */
 	if (tree)
 	{ 
 		proto_item *ti = NULL;
-        	ti = proto_tree_add_item(tree, proto_tfp, tvb, 0, -1, ENC_NA);
+		ti = proto_tree_add_protocol_format(tree, proto_tfp, tvb, 0, -1,
+                                                    "Tinkerforge Protocol, UID: %s, Len: %d, FID: %d, Seq: %d",
+                                                    &tfp_uid_string[0], hv_tfp_len, hv_tfp_fid, hv_tfp_seq);
 		tfp_tree = proto_item_add_subtree(ti, ett_tfp);
-
-		base58_encode((uint32_t)tvb_get_letohl(tvb, 0),
-			      &tfp_uid_string[0]);
 
         	proto_tree_add_string(tfp_tree,
 				      hf_tfp_uid,
@@ -136,7 +154,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                                     tvb,
                                     byte_offset,
                                     byte_count_tfp_uid,
-                                    ENC_BIG_ENDIAN);
+                                    ENC_LITTLE_ENDIAN);
 		
 		byte_offset += byte_count_tfp_uid;
 
@@ -145,7 +163,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    tvb,
 				    byte_offset,
 				    byte_count_tfp_len,
-				    ENC_BIG_ENDIAN);
+				    ENC_LITTLE_ENDIAN);
 		
 		byte_offset += byte_count_tfp_len;
 
@@ -154,7 +172,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
      				    tvb,
 				    byte_offset,
 				    byte_count_tfp_fid,
-				    ENC_BIG_ENDIAN);
+				    ENC_LITTLE_ENDIAN);
 		
 		byte_offset += byte_count_tfp_fid;
 
@@ -163,7 +181,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_seq,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 
 		bit_offset += bit_count_tfp_seq;
 
@@ -172,7 +190,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_r,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 		
 		bit_offset += bit_count_tfp_r;
 
@@ -181,7 +199,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_a,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 		
 		bit_offset += bit_count_tfp_a;
 
@@ -190,7 +208,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_oo,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 
 		bit_offset += bit_count_tfp_oo;
 
@@ -199,7 +217,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_e,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 		
 		bit_offset += bit_count_tfp_e;
 
@@ -208,7 +226,7 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 tvb,
 					 bit_offset,
 					 bit_count_tfp_future_use,
-					 ENC_BIG_ENDIAN);
+					 ENC_LITTLE_ENDIAN);
 
 		bit_offset += bit_count_tfp_future_use;
 
@@ -226,10 +244,11 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     	}
 }
 
-// dissector function for dissecting USB payloads
+/* dissector function for dissecting USB payloads */
 static void
 dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
+
 	usb_conv_info_t *usb_conv_info;
 	usb_conv_info = (usb_conv_info_t *)pinfo->usb_conv_info;
 
@@ -237,18 +256,30 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	{
 		byte_offset = 0;
 		bit_offset = 48;
-		col_set_str(pinfo->cinfo, COL_PROTOCOL, &tfp_proto_name_usb[0]);	
-		col_set_str(pinfo->cinfo, COL_INFO, &tfp_proto_name[0]);
 
-		// call for details
+		base58_encode((uint32_t)tvb_get_letohl(tvb, 0), &tfp_uid_string[0]);
+
+		hv_tfp_len = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_LEN);
+		hv_tfp_fid = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_FID);
+		hv_tfp_seq = tvb_get_bits8(tvb, (gint)tfp_BIT_OFFSET_SEQ, (gint)bit_count_tfp_seq);
+
+
+    		col_clear(pinfo->cinfo, COL_INFO);
+    		col_clear(pinfo->cinfo, COL_PROTOCOL);
+
+		col_set_str(pinfo->cinfo, COL_PROTOCOL, &tfp_proto_name_usb[0]);	
+		col_append_fstr(pinfo->cinfo, COL_INFO, 
+				"UID: %s, Len: %d, FID: %d, Seq: %d", 
+				&tfp_uid_string[0], hv_tfp_len, hv_tfp_fid, hv_tfp_seq);
+
+		/* call for details */
 		if (tree)
 		{ 
 			proto_item *ti = NULL;
-        		ti = proto_tree_add_item(tree, proto_tfp, tvb, 0, -1, ENC_NA);
+			ti = proto_tree_add_protocol_format(tree, proto_tfp, tvb, 0, -1,
+                                                    	   "Tinkerforge Protocol, UID: %s, Len: %d, FID: %d, Seq: %d",
+                                                    	   &tfp_uid_string[0], hv_tfp_len, hv_tfp_fid, hv_tfp_seq);
 			tfp_tree = proto_item_add_subtree(ti, ett_tfp);
-
-			base58_encode((uint32_t)tvb_get_letohl(tvb, 0),
-			      	      &tfp_uid_string[0]);
 
         		proto_tree_add_string(tfp_tree,
 				      	      hf_tfp_uid,
@@ -260,7 +291,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    	    tvb,
 				    	    byte_offset,
 				    	    byte_count_tfp_uid,
-				    	    ENC_BIG_ENDIAN);
+				    	    ENC_LITTLE_ENDIAN);
 		
 			byte_offset += byte_count_tfp_uid;
 
@@ -269,7 +300,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    	    tvb,
 				    	    byte_offset,
 				    	    byte_count_tfp_len,
-				    	    ENC_BIG_ENDIAN);
+				    	    ENC_LITTLE_ENDIAN);
 		
 			byte_offset += byte_count_tfp_len;
 
@@ -278,7 +309,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    	    tvb,
 				    	    byte_offset,
 				    	    byte_count_tfp_fid,
-				    	    ENC_BIG_ENDIAN);
+				    	    ENC_LITTLE_ENDIAN);
 		
 			byte_offset += byte_count_tfp_fid;
 
@@ -287,7 +318,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    	    tvb,
 				    	    bit_offset,
 				    	    bit_count_tfp_seq,
-				    	    ENC_BIG_ENDIAN);
+				    	    ENC_LITTLE_ENDIAN);
 
 			bit_offset += bit_count_tfp_seq;
 
@@ -296,7 +327,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 				    	   	 tvb,
 				    	   	 bit_offset,
 				    	   	 bit_count_tfp_r,
-				    	   	 ENC_BIG_ENDIAN);
+				    	   	 ENC_LITTLE_ENDIAN);
 		
 			bit_offset += bit_count_tfp_r;
 
@@ -305,7 +336,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 	 tvb,
 					 	 bit_offset,
 					 	 bit_count_tfp_a,
-					 	 ENC_BIG_ENDIAN);
+					 	 ENC_LITTLE_ENDIAN);
 		
 			bit_offset += bit_count_tfp_a;
 
@@ -314,7 +345,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 	 tvb,
 					 	 bit_offset,
 					 	 bit_count_tfp_oo,
-					 	 ENC_BIG_ENDIAN);
+					 	 ENC_LITTLE_ENDIAN);
 
 			bit_offset += bit_count_tfp_oo;
 
@@ -323,7 +354,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 	 tvb,
 					 	 bit_offset,
 					 	 bit_count_tfp_e,
-					 	 ENC_BIG_ENDIAN);
+					 	 ENC_LITTLE_ENDIAN);
 		
 			bit_offset += bit_count_tfp_e;
 
@@ -332,7 +363,7 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 					 	 tvb,
 					 	 bit_offset,
 					 	 bit_count_tfp_future_use,
-					 	 ENC_BIG_ENDIAN);
+					 	 ENC_LITTLE_ENDIAN);
 
 			bit_offset += bit_count_tfp_future_use;
 
@@ -352,11 +383,11 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	}
 }
 
-// protocol register function
+/* protocol register function */
 void
 proto_register_tfp(void)
 {
-	// defining header formats
+	/* defining header formats */
 	static hf_register_info hf_tfp[] = {
       		{ &hf_tfp_uid,
             		{ "UID (String)",
@@ -481,23 +512,23 @@ proto_register_tfp(void)
         	}
     	};
 
-	// setup protocol subtree array
+	/* setup protocol subtree array */
 	static gint *ett[] = {
         	&ett_tfp
 	};
 
-	// defining the protocol and its names
+	/* defining the protocol and its names */
 	proto_tfp = proto_register_protocol (
 		"Tinkerforge Protocol",
 		"TFP",
-        "tfp"
+        	"tfp"
 	);
 
 	proto_register_field_array(proto_tfp, hf_tfp, array_length(hf_tfp));
 	proto_register_subtree_array(ett, array_length(ett));
 }
 
-// handoff function
+/* handoff function */
 void
 proto_reg_handoff_tfp(void){
 
@@ -511,4 +542,3 @@ proto_reg_handoff_tfp(void){
 	dissector_add_uint("tcp.port", tfp_PORT, tfp_handle_tcp);
 	dissector_add_uint("usb.bulk", IF_CLASS_VENDOR_SPECIFIC, tfp_handle_usb);
 }
-
