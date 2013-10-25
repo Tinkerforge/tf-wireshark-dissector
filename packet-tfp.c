@@ -126,7 +126,6 @@ dissect_tfp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	hv_tfp_fid = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_FID);
 	hv_tfp_seq = tvb_get_bits8(tvb, (gint)tfp_BIT_OFFSET_SEQ, (gint)bit_count_tfp_seq);
 
-
     	col_clear(pinfo->cinfo, COL_INFO);
     	col_clear(pinfo->cinfo, COL_PROTOCOL);
 
@@ -262,7 +261,6 @@ dissect_tfp_usb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		hv_tfp_len = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_LEN);
 		hv_tfp_fid = tvb_get_guint8(tvb, (gint)tfp_BYTE_OFFSET_FID);
 		hv_tfp_seq = tvb_get_bits8(tvb, (gint)tfp_BIT_OFFSET_SEQ, (gint)bit_count_tfp_seq);
-
 
     		col_clear(pinfo->cinfo, COL_INFO);
     		col_clear(pinfo->cinfo, COL_PROTOCOL);
